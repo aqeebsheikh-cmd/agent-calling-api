@@ -1,11 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import type { Chat, Message, User } from '../types';
+import { sendChatMessage } from '../services/api';
+import { generateSessionId } from '../utils/utils';
 
 
 interface ChatContextType {
     chats: Chat[];
     currentChatId: string | null;
     user: User;
+    isLoading: boolean;
     createNewChat: () => void;
     selectChat: (chatId: string) => void;
     sendMessage: (text: string) => void;
@@ -36,6 +39,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         {
             id: '1',
             title: 'Rephrase Conversation',
+            sessionId: generateSessionId(),
             messages: [
                 {
                     id: '1',
@@ -62,6 +66,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         {
             id: '2',
             title: 'Your chatbot agent listen more',
+            sessionId: generateSessionId(),
             messages: [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -69,6 +74,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         {
             id: '3',
             title: 'My 1st Chat with Deepwize Agent',
+            sessionId: generateSessionId(),
             messages: [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -76,11 +82,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     ]);
 
     const [currentChatId, setCurrentChatId] = useState<string | null>('1');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const createNewChat = () => {
         const newChat: Chat = {
             id: Date.now().toString(),
             title: 'New Chat',
+            sessionId: generateSessionId(),
             messages: [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -97,8 +105,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         return chats.find((chat) => chat.id === currentChatId);
     };
 
-    const sendMessage = (text: string) => {
+    const sendMessage = async (text: string) => {
         if (!text.trim() || !currentChatId) return;
+
+        const currentChat = getCurrentChat();
+        if (!currentChat) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -128,11 +139,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             })
         );
 
-        // Simulate bot response (echo back the user message)
-        setTimeout(() => {
+        // Set loading state
+        setIsLoading(true);
+
+        try {
+            // Call the API
+            const response = await sendChatMessage(currentChat.sessionId, text.trim());
+
+            // Add bot response
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: text.trim(), // Echo back the same message
+                text: response.assistant_summary,
                 sender: 'bot',
                 timestamp: new Date(),
             };
@@ -149,13 +166,38 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                     return chat;
                 })
             );
-        }, 500);
+        } catch (error) {
+            // Add error message
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: error instanceof Error ? error.message : 'Failed to get response. Please try again.',
+                sender: 'bot',
+                timestamp: new Date(),
+                error: 'true',
+            };
+
+            setChats((prev) =>
+                prev.map((chat) => {
+                    if (chat.id === currentChatId) {
+                        return {
+                            ...chat,
+                            messages: [...chat.messages, errorMessage],
+                            updatedAt: new Date(),
+                        };
+                    }
+                    return chat;
+                })
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const value: ChatContextType = {
         chats,
         currentChatId,
         user,
+        isLoading,
         createNewChat,
         selectChat,
         sendMessage,
@@ -164,3 +206,4 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
+

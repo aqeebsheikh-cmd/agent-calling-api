@@ -227,3 +227,60 @@
 .sendButton img {
   width: 30px;
 }
+
+/* TYPING INDICATOR */
+.typingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.typingIndicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #593E98;
+  opacity: 0.6;
+  animation: typing 1.4s infinite;
+}
+
+.typingIndicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typingIndicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+/* ERROR MESSAGE */
+.messageWrapper.error .messageBubble {
+  background: #fee;
+  border-left-color: #dc2626;
+}
+
+.messageWrapper.error .messageBubble::before {
+  background: #dc2626;
+}
+
+/* DISABLED STATES */
+.messageInput:disabled,
+.inputIconButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

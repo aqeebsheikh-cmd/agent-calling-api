@@ -3,6 +3,8 @@ export interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  isLoading?: boolean;
+  error?: string;
 }
 
 export interface Chat {
@@ -11,9 +13,26 @@ export interface Chat {
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
+  sessionId: string;
 }
 
 export interface User {
   name: string;
   avatar: string;
+}
+
+// API Types
+export interface ChatApiRequest {
+  session_id: string;
+  message: string;
+  jwt_token: string;
+}
+
+export interface ChatApiResponse {
+  assistant_summary: string;
+  assistant_dev_info: string;
+  api_response: {
+    status_code: number | null;
+    response_body: string;
+  };
 }
