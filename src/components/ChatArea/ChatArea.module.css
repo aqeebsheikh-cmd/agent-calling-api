@@ -122,13 +122,13 @@
 
 .messageWrapper.bot .messageBubble::before {
   left: 0;
-  background: #1e3a8a;
+  background: #082567;
   border-radius: 10px 0 0 10px;
 }
 
 .messageWrapper.user .messageBubble::before {
   right: 0;
-  background: #5b3f99;
+  background: #593E98;
   border-radius: 0 10px 10px 0;
 }
 
