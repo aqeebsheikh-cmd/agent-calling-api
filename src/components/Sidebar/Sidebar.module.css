@@ -1,0 +1,268 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap");
+
+.sidebar {
+  width: 320px;
+  height: calc(100vh - 32px);
+  margin: 16px;
+  background: #ffffff;
+
+  /* 👇 Card-like border */
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+
+  /* 👇 layered outline + elevation */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    /* inner subtle outline */ 0 0 0 4px rgba(0, 0, 0, 0.02),
+    /* soft outer ring */ 0 8px 24px rgba(0, 0, 0, 0.06); /* ambient elevation */
+}
+
+/* BIG GRID BACKGROUND (5 columns) */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  inset: -40px; /* 👈 allows partial squares on edges */
+
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.025) 2px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.025) 2px, transparent 1px);
+
+  /* 👇 perfect square grid */
+  background-size: 56px 56px;
+
+  /* 👇 fade effect near edges */
+  mask-image: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 1) 65%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 1) 65%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HEADER */
+.sidebarHeader {
+  padding: 20px;
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1;
+}
+
+.logo {
+  width: 50px;
+}
+
+.menuToggle {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+  /* border: 2px solid #111827; dark outline like screenshot */
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.menuToggle:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+}
+
+.menuToggle img {
+  width: 18px;
+  height: 18px;
+}
+
+/* ACTIONS */
+.sidebarActions {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1;
+}
+
+.actionList {
+  padding: 8px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+
+  cursor: pointer;
+}
+
+.actionItem img {
+  width: 18px;
+  height: 18px;
+}
+
+.actionItem:hover {
+  color: var(--primary-purple);
+}
+
+.newChatBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.newChatBtn img {
+  width: 18px;
+}
+
+/* SEARCH */
+.searchContainer {
+  position: relative;
+}
+
+.searchContainer input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 16px;
+  transform: translateY(-50%);
+}
+
+/* CHAT LIST */
+.chatList {
+  flex: 1;
+  padding: 0 20px;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.chatListTitle {
+  font-size: 14px;
+  color: #292929cc;
+  margin: 16px 0 8px;
+}
+
+.chatItem {
+  padding: 6px 0; /* vertical rhythm like Figma */
+  cursor: pointer;
+
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1; /* 100% */
+  letter-spacing: 0;
+
+  color: rgba(41, 41, 41, 0.8);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chatItem:hover {
+  background: #f3f4f6;
+}
+
+.chatItem.active {
+  /* background: #eef2ff; */
+  color: var(--primary-purple);
+  font-weight: 500;
+}
+
+/* FOOTER */
+.userFooter {
+  margin: 4px;
+  padding: 20px 16px;
+  min-height: 90px;
+
+  background: #5b3f99;
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: #ffffff;
+}
+
+/* LEFT SIDE */
+.userFooterLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* AVATAR — NOT CIRCULAR */
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* TEXT */
+.userText {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcomeText {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.userName {
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* CHEVRON */
+.chevron {
+  width: 22px;
+  height: 22px;
+  opacity: 0.9;
+}
