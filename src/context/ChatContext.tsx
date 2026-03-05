@@ -145,14 +145,39 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         try {
             // Call the API
             const response = await sendChatMessage(currentChat.sessionId, text.trim());
+            const apiResponse = response.api_response;
 
+                let messageText = 'Sorry, something went wrong.';
+
+                if (apiResponse?.status_code === 200) {
+                    const firstResult = apiResponse.response_body?.[0];
+
+                    if (firstResult?.status_code !== 200) {
+                        messageText = `API Error: ${firstResult}`;
+                    } 
+                    else if (firstResult?.status_code === 200) {
+                        const result = firstResult.response_body;
+
+                        messageText =
+                            typeof result === 'string'
+                                ? result
+                                : JSON.stringify(result, null, 2);
+                    } 
+                    else {
+                        messageText = `API returned status ${firstResult?.status_code}`;
+                    }
+                } else {
+                    messageText = `Request failed with status ${apiResponse?.status_code}`;
+                }
             // Add bot response
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: response.assistant_summary,
+                text: messageText,
                 sender: 'bot',
                 timestamp: new Date(),
             };
+            console.log('API Response:', response);
+            console.log('Bot Message:', botMessage);
 
             setChats((prev) =>
                 prev.map((chat) => {
