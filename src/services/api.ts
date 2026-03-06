@@ -1,7 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import type { ChatApiRequest, ChatApiResponse } from '../types';
 
-const API_BASE_URL = 'https://apiagents-erdfdag3gudfhgfh.centralindia-01.azurewebsites.net';
+// const API_BASE_URL = 'https://apiagents-erdfdag3gudfhgfh.centralindia-01.azurewebsites.net';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // Create axios instance with default config
 const apiClient = axios.create({

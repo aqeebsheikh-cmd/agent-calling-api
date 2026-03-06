@@ -33,6 +33,11 @@ export interface ChatApiResponse {
   assistant_dev_info: string;
   api_response: {
     status_code: number | null;
-    response_body: string;
+    response_body: ApiCallResult[];
   };
+}
+
+export interface ApiCallResult {
+  status_code: number;
+  response_body: string | object;
 }

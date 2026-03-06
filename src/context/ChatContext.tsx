@@ -2,8 +2,6 @@ import React, { createContext, useContext, useState, type ReactNode } from 'reac
 import type { Chat, Message, User } from '../types';
 import { sendChatMessage } from '../services/api';
 import { generateSessionId } from '../utils/utils';
-
-
 interface ChatContextType {
     chats: Chat[];
     currentChatId: string | null;
@@ -29,7 +27,47 @@ interface ChatProviderProps {
     children: ReactNode;
 }
 
+/*
+    Generic formatter for ANY API response.
+    Converts JSON into readable text automatically.
+*/
+const formatApiResult = (data: any, indent = 0): string => {
+    const space = ' '.repeat(indent);
+
+    if (data === null || data === undefined) {
+        return 'No data returned';
+    }
+
+    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+        return `${data}`;
+    }
+
+    if (Array.isArray(data)) {
+        return data
+            .map((item) => `${space}- ${formatApiResult(item, indent + 2)}`)
+            .join('\n');
+    }
+
+    if (typeof data === 'object') {
+        return Object.entries(data)
+            .map(([key, value]) => {
+                const formattedValue = formatApiResult(value, indent + 2);
+
+                // If value is another object/array -> put on next line
+                if (typeof value === "object" && value !== null) {
+                    return `${space}${key}:\n${formattedValue}`;
+                }
+
+                return `${space}${key}: ${formattedValue}`;
+            })
+            .join('\n');
+    }
+
+    return JSON.stringify(data);
+};
+
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
+
     const [user] = useState<User>({
         name: 'Ravi Joshi',
         avatar: '/src/assets/user_avtar.png',
@@ -93,6 +131,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+
         setChats((prev) => [newChat, ...prev]);
         setCurrentChatId(newChat.id);
     };
@@ -104,6 +143,27 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const getCurrentChat = () => {
         return chats.find((chat) => chat.id === currentChatId);
     };
+    const getDisplayMessage = (data: unknown): string => {
+
+        const apiStatus = data?.api_response?.status_code;
+
+        // CASE 1: Real API executed
+        if (apiStatus === 200) {
+
+            const body = data?.api_response?.response_body?.[0]?.response_body;
+
+            if (body) {
+            return formatApiResult(body);
+            }
+        }
+
+        // CASE 2: No API executed
+        if (data?.assistant_summary) {
+            return data.assistant_summary;
+        }
+
+        return "No response available.";
+        };
 
     const sendMessage = async (text: string) => {
         if (!text.trim() || !currentChatId) return;
@@ -118,11 +178,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             timestamp: new Date(),
         };
 
-        // Update chat with user message
+        // Add user message
         setChats((prev) =>
             prev.map((chat) => {
                 if (chat.id === currentChatId) {
                     const updatedMessages = [...chat.messages, userMessage];
+
                     const updatedTitle =
                         chat.messages.length === 0
                             ? text.trim().slice(0, 50) + (text.length > 50 ? '...' : '')
@@ -139,20 +200,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             })
         );
 
-        // Set loading state
         setIsLoading(true);
 
         try {
-            // Call the API
+
             const response = await sendChatMessage(currentChat.sessionId, text.trim());
 
-            // Add bot response
+            const messageText = getDisplayMessage(response);
+
+            console.log("Formatted result:", messageText);
+
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: response.assistant_summary,
+                text: messageText,
                 sender: 'bot',
                 timestamp: new Date(),
             };
+            console.log('API Response:', response);
+            console.log('Bot Message:', botMessage);
 
             setChats((prev) =>
                 prev.map((chat) => {
@@ -166,11 +231,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                     return chat;
                 })
             );
+
         } catch (error) {
-            // Add error message
+
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: error instanceof Error ? error.message : 'Failed to get response. Please try again.',
+                text:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to get response. Please try again.',
                 sender: 'bot',
                 timestamp: new Date(),
                 error: 'true',
@@ -188,9 +257,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                     return chat;
                 })
             );
+
         } finally {
+
             setIsLoading(false);
+
         }
+        
     };
 
     const value: ChatContextType = {
@@ -206,4 +279,3 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
-

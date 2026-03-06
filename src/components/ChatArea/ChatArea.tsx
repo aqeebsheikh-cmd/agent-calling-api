@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useChatContext } from "../../context/ChatContext";
 import styles from "./ChatArea.module.css";
-
 import EmojiIcon from "../../assets/Emojis.svg";
 import PaperclipIcon from "../../assets/Paperclip.svg";
 import SendIcon from "../../assets/Send.svg";
@@ -58,7 +57,7 @@ const ChatArea: React.FC = () => {
                   )}
 
                   {/* MESSAGE BUBBLE */}
-                  <div className={styles.messageBubble}>{message.text}</div>
+                  <div className={styles.messageBubble} style={{ whiteSpace: "pre-wrap" }}>{message.text}</div>
 
                   {/* BOT ACTION (RIGHT) */}
                   {message.sender === "bot" && !message.error && (
