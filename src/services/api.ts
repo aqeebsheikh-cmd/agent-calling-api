@@ -21,13 +21,15 @@ const apiClient = axios.create({
  */
 export const sendChatMessage = async (
     sessionId: string,
-    message: string
+    message: string,
+    apiBase: string
 ): Promise<ChatApiResponse> => {
     try {
         const payload: ChatApiRequest = {
             session_id: sessionId,
             message: message,
             jwt_token: '', // Empty as per requirements
+            api_base: apiBase
         };
 
         const response = await apiClient.post<ChatApiResponse>('/api/chat', payload);

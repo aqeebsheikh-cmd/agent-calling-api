@@ -7,6 +7,8 @@ export interface Message {
   error?: string;
 }
 
+export type ChatType =  'ai' | 'graph';
+
 export interface Chat {
   id: string;
   title: string;
@@ -14,6 +16,7 @@ export interface Chat {
   createdAt: Date;
   updatedAt: Date;
   sessionId: string;
+  type: ChatType; 
 }
 
 export interface User {
@@ -26,6 +29,7 @@ export interface ChatApiRequest {
   session_id: string;
   message: string;
   jwt_token: string;
+  api_base: string;
 }
 
 export interface ChatApiResponse {

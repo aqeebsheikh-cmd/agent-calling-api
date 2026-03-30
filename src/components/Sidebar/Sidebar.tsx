@@ -15,6 +15,8 @@ const Sidebar: React.FC = () => {
   const filteredChats = chats.filter((chat) =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+  const aiChats = filteredChats.filter(chat => chat.type === 'ai');
+  const graphChats = filteredChats.filter(chat => chat.type === 'graph');
 
   return (
     <aside className={styles.sidebar}>
@@ -46,20 +48,36 @@ const Sidebar: React.FC = () => {
 
       {/* Chat List */}
       <div className={styles.chatList}>
-        <p className={styles.chatListTitle}>Your Chats</p>
+  <p className={styles.chatListTitle}>Your Chats</p>
 
-        {filteredChats.map((chat) => (
-          <div
-            key={chat.id}
-            className={`${styles.chatItem} ${
-              chat.id === currentChatId ? styles.active : ""
-            }`}
-            onClick={() => selectChat(chat.id)}
-          >
-            {chat.title}
-          </div>
-        ))}
-      </div>
+  {/*  AI Section */}
+  <p className={styles.chatSectionTitle}>AI Services</p>
+  {aiChats.map((chat) => (
+    <div
+      key={chat.id}
+      className={`${styles.chatItem} ${
+        chat.id === currentChatId ? styles.active : ""
+      }`}
+      onClick={() => selectChat(chat.id)}
+    >
+      {chat.title}
+    </div>
+  ))}
+
+  {/* Microsoft Graph Section */}
+  <p className={styles.chatSectionTitle}>Graph APIs</p>
+  {graphChats.map((chat) => (
+    <div
+      key={chat.id}
+      className={`${styles.chatItem} ${
+        chat.id === currentChatId ? styles.active : ""
+      }`}
+      onClick={() => selectChat(chat.id)}
+    >
+      {chat.title}
+    </div>
+  ))}
+</div>
 
       {/* Footer */}
       <div className={styles.userFooter}>
