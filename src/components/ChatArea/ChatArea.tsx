@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useChatContext } from "../../context/ChatContext";
 import styles from "./ChatArea.module.css";
 import EmojiIcon from "../../assets/Emojis.svg";
@@ -57,7 +59,11 @@ const ChatArea: React.FC = () => {
                   )}
 
                   {/* MESSAGE BUBBLE */}
-                  <div className={styles.messageBubble} style={{ whiteSpace: "pre-wrap" }}>{message.text}</div>
+                  <div className={styles.messageBubble}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
 
                   {/* BOT ACTION (RIGHT) */}
                   {message.sender === "bot" && !message.error && (

@@ -4,7 +4,7 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import type { Chat, Message, User , ChatType } from "../types";
+import type { Chat, Message, User , ChatType, ChatApiResponse } from "../types";
 import { sendChatMessage } from "../services/api";
 import { generateSessionId } from "../utils/utils";
 interface ChatContextType {
@@ -32,42 +32,76 @@ interface ChatProviderProps {
   children: ReactNode;
 }
 
+// Converts camelCase/PascalCase keys to readable Title Case labels.
+// e.g. "displayName" -> "Display Name", "jobTitle" -> "Job Title"
+const humanizeKey = (key: string): string =>
+  key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (s) => s.toUpperCase())
+    .trim();
+
+// Keys that are internal technical metadata and add no user value
+const SKIP_KEYS = new Set(["eTag", "cTag"]);
+
+const shouldSkipKey = (key: string): boolean =>
+  key.startsWith("@") || SKIP_KEYS.has(key);
+
 /*
     Generic formatter for ANY API response.
-    Converts JSON into readable text automatically.
+    Outputs markdown-compatible text for rendering via ReactMarkdown.
 */
 const formatApiResult = (data: unknown, indent = 0): string => {
   const space = " ".repeat(indent);
 
   if (data === null || data === undefined) {
-    return "No data returned";
+    return "—";
   }
 
-  if (
-    typeof data === "string" ||
-    typeof data === "number" ||
-    typeof data === "boolean"
-  ) {
-    return `${data}`;
+  if (typeof data === "string" || typeof data === "number" || typeof data === "boolean") {
+    return String(data);
   }
 
   if (Array.isArray(data)) {
+    if (data.length === 0) return "—";
+    // Top-level arrays get a visible --- divider between items;
+    // nested arrays use a blank line to avoid breaking markdown list context.
+    const separator = indent === 0 ? "\n\n---\n\n" : "\n\n";
     return data
-      .map((item) => `${space}- ${formatApiResult(item, indent + 2)}`)
-      .join("\n");
+      .map((item) => {
+        if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+          const entries = Object.entries(item as Record<string, unknown>).filter(
+            ([key]) => !shouldSkipKey(key)
+          );
+          // Every property is its own bullet so ReactMarkdown renders
+          // each field as a separate list item, not a single paragraph.
+          return entries
+            .map(([key, value]) => {
+              const label = humanizeKey(key);
+              const formattedValue = formatApiResult(value, indent + 2);
+              if (typeof value === "object" && value !== null) {
+                return `${space}- **${label}**:\n${formattedValue}`;
+              }
+              return `${space}- **${label}**: ${formattedValue}`;
+            })
+            .join("\n");
+        }
+        return `${space}- ${formatApiResult(item, indent + 2)}`;
+      })
+      .join(separator);
   }
 
   if (typeof data === "object") {
-    return Object.entries(data)
+    const entries = Object.entries(data as Record<string, unknown>).filter(
+      ([key]) => !shouldSkipKey(key)
+    );
+    return entries
       .map(([key, value]) => {
+        const label = humanizeKey(key);
         const formattedValue = formatApiResult(value, indent + 2);
-
-        // If value is another object/array -> put on next line
         if (typeof value === "object" && value !== null) {
-          return `${space}${key}:\n${formattedValue}`;
+          return `${space}- **${label}**:\n${formattedValue}`;
         }
-
-        return `${space}${key}: ${formattedValue}`;
+        return `${space}- **${label}**: ${formattedValue}`;
       })
       .join("\n");
   }
@@ -173,20 +207,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const getCurrentChat = () => {
     return chats.find((chat) => chat.id === currentChatId);
   };
-  const getDisplayMessage = (data: unknown): string => {
-    const apiStatus = data?.api_response?.status_code;
+  const getDisplayMessage = (data: ChatApiResponse): string => {
+    const apiStatus = data.api_response?.status_code;
 
-    // CASE 1: Real API executed
+    // CASE 1: Real API executed — format all items in response_body
     if (apiStatus === 200) {
-      const body = data?.api_response?.response_body?.[0]?.response_body;
-
-      if (body) {
-        return formatApiResult(body);
+      const results = data.api_response?.response_body;
+      if (results && results.length > 0) {
+        const formatted = results
+          .filter((r) => r.response_body !== undefined && r.response_body !== null)
+          .map((r) => formatApiResult(r.response_body))
+          .join("\n\n");
+        if (formatted) return formatted;
       }
     }
 
-    // CASE 2: No API executed
-    if (data?.assistant_summary) {
+    // CASE 2: No API executed / fallback
+    if (data.assistant_summary) {
       return data.assistant_summary;
     }
 
