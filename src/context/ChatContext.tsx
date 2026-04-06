@@ -47,6 +47,38 @@ const shouldSkipKey = (key: string): boolean =>
   key.startsWith("@") || SKIP_KEYS.has(key);
 
 /*
+    Parses the embedded error string returned by the backend when an individual
+    API sub-call fails (e.g. 401, 403) even though the outer status_code is 200.
+    Returns a user-friendly message.
+*/
+const extractErrorMessage = (errorStr: string): string => {
+  const statusMatch = errorStr.match(/'status_code':\s*(\d+)/);
+  const statusCode = statusMatch ? parseInt(statusMatch[1]) : null;
+
+  const messageMatch = errorStr.match(/'message':\s*'([^']+)'/);
+  const rawMessage = messageMatch ? messageMatch[1] : null;
+
+  switch (statusCode) {
+    case 401:
+      return "Your session has expired or you're not signed in. Please log in and try again.";
+    case 403:
+      return "You don't have permission to access this resource. Contact your admin if you think this is a mistake.";
+    case 404:
+      return "We couldn't find what you were looking for. The resource may have been moved or deleted.";
+    case 429:
+      return "Too many requests. Please wait a moment and try again.";
+    default:
+      if (statusCode && statusCode >= 500) {
+        return "Something went wrong on the server. Please try again later.";
+      }
+      if (rawMessage) {
+        return `Something went wrong: ${rawMessage}`;
+      }
+      return "An unexpected error occurred. Please try again.";
+  }
+};
+
+/*
     Generic formatter for ANY API response.
     Outputs markdown-compatible text for rendering via ReactMarkdown.
 */
@@ -207,27 +239,41 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const getCurrentChat = () => {
     return chats.find((chat) => chat.id === currentChatId);
   };
-  const getDisplayMessage = (data: ChatApiResponse): string => {
+  const getDisplayMessage = (data: ChatApiResponse): { text: string; isError: boolean } => {
     const apiStatus = data.api_response?.status_code;
 
-    // CASE 1: Real API executed — format all items in response_body
+    // CASE 1: Real API executed (outer status 200)
     if (apiStatus === 200) {
       const results = data.api_response?.response_body;
       if (results && results.length > 0) {
+
+        // Check for embedded errors first (e.g. 401, 403 inside a 200 envelope)
+        const errorItems = results.filter((r) => r.error !== undefined);
+        if (errorItems.length > 0) {
+          const errorMessages = errorItems
+            .map((r) => extractErrorMessage(r.error!))
+            .join("\n\n");
+          return { text: errorMessages, isError: true };
+        }
+
+        // Normal success — format response bodies
         const formatted = results
           .filter((r) => r.response_body !== undefined && r.response_body !== null)
           .map((r) => formatApiResult(r.response_body))
           .join("\n\n");
-        if (formatted) return formatted;
+        if (formatted) return { text: formatted, isError: false };
       }
     }
 
-    // CASE 2: No API executed / fallback
+    // CASE 2: No API executed / fallback — show assistant summary (strip LLM numbering artifacts)
     if (data.assistant_summary) {
-      return data.assistant_summary;
+      const cleaned = data.assistant_summary
+        .replace(/\s*\d+\)\s*$/g, "")  // remove trailing "2)" or "1)" etc.
+        .trim();
+      return { text: cleaned || data.assistant_summary, isError: false };
     }
 
-    return "No response available.";
+    return { text: "No response available.", isError: false };
   };
 
   const getApiBaseFromChatType = (type: string): string => {
@@ -287,7 +333,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         apiBase
       );
 
-      const messageText = getDisplayMessage(response);
+      const { text: messageText, isError } = getDisplayMessage(response);
 
       console.log("Formatted result:", messageText);
 
@@ -296,6 +342,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         text: messageText,
         sender: "bot",
         timestamp: new Date(),
+        ...(isError && { error: "true" }),
       };
       console.log("API Response:", response);
       console.log("Bot Message:", botMessage);

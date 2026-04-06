@@ -42,6 +42,7 @@ export interface ChatApiResponse {
 }
 
 export interface ApiCallResult {
-  status_code: number;
-  response_body: string | object;
+  status_code?: number;
+  response_body?: string | object;
+  error?: string;
 }
